@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-from sympy import nan  # для проверки на NaN
+from sympy import nan, zoo  # для проверки на NaN и zoo
 from sympy import Piecewise  # кусочная функция
 from sympy import Matrix  # матрицы из sympy
 from numpy import linspace  # range для нецелых
@@ -40,18 +40,18 @@ def generateBasicFunctions(X, k):
         J_previous = generateBasicFunctions(X, k - 1)
         for i in range(0, len(J_previous) - 1):
             # 1. (ОСНОВНОЙ ВАРИАНТ) Вариант не с Moodle - выдаёт правильную середину при k = 3
-            J.append(J_previous[i] * (t - X[i]) / (X[i + k - 1] - X[i]) +
-                     J_previous[i + 1] * (X[i + k] - t) / (X[i + k] - X[i + 1]))
+            # J.append(J_previous[i] * (t - X[i]) / (X[i + k - 1] - X[i]) +
+            #          J_previous[i + 1] * (X[i + k] - t) / (X[i + k] - X[i + 1]))
             # 2. Вариант с Moodle - выдаёт zoo при k = 2
-            # J.append(J_previous[i] * (t - X[i]) / X[i + k - 2] +
-            #          J_previous[i + 1] * (X[i + k - 1] - t) / (X[i + k - 1] - X[i + 1]))
+            J.append(J_previous[i] * (t - X[i]) / X[i + k - 2] +
+                     J_previous[i + 1] * (X[i + k - 1] - t) / (X[i + k - 1] - X[i + 1]))
             # 3.1. Комбо - выдаёт zoo при k = 2
             # J.append(J_previous[i] * (t - X[i]) / (X[i + k - 2] - X[i]) +
             #          J_previous[i + 1] * (X[i + k - 1] - t) / (X[i + k - 1] - X[i + 1]))
             # 3.2. Комбо - выдаёт неправильную середину при k = 3
             # J.append(J_previous[i] * (t - X[i]) / X[i + k - 1] +
             #          J_previous[i + 1] * (X[i + k] - t) / (X[i + k] - X[i + 1]))
-            if J[-1] == nan:
+            if J[-1].has(zoo, nan):
                 J[-1] = 0
     return J
 
@@ -60,20 +60,20 @@ def drawBSpline(points, k: int, ax):
     N = len(points)  # количество точек
     n = N - 1  # n из материалов Moodle
     X = generateNodalVector(n, k)  # узловой вектор
-    # print("X = ", X)
+    print("X = ", X)
     J = generateBasicFunctions(X, k)  # рекурсивное создание базисных функций (ПРОБЛЕМА НЕ ЗДЕСЬ)
-    # print("Элементы J:")
-    # for elem in J:
-    #     print(elem)
+    print("Элементы J:")
+    for elem in J:
+        print(elem)
     P = J[0] * points[0]
     for i in range(1, N):  # создание итоговой функции
         P = P + J[i] * points[i]
     x_func = P[0]
     y_func = P[1]
     spline_points = []
-    t_values = linspace(1, n - k + 1, 100)  # поиграться с отображением начальных/конечных точек
-    for t_value in t_values:
-        # print("Для t = ", t_value, " точка: ", [x_func.subs(t, t_value), y_func.subs(t, t_value)])
+    t_values = linspace(0, n - k + 2, 100)  # поиграться с отображением начальных/конечных точек
+    for t_value in t_values[:-1]:
+        print("Для t = ", t_value, " точка: ", [x_func.subs(t, t_value), y_func.subs(t, t_value)])
         spline_points.append([x_func.subs(t, t_value), y_func.subs(t, t_value)])
     plot_contour(spline_points, ax, contour=False)
 
@@ -83,7 +83,7 @@ def main():
               for i in range(1, int(input('Введите количество точек: ')) + 1)]
     k = int(input('Введите порядок B-сплайна (0 до N-1): '))
     # поиграться с копированием начальных/конечных точек
-    points = [points[0], *points, points[-1]]
+    # points = [points[0], *points, points[-1]]
     # plotting
     plt.figure()
     ax = plt.axes()
